@@ -1,1 +1,1 @@
-# neural_npfp
+# Neural Natural Product Fingerprint
