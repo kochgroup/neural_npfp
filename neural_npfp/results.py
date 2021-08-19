@@ -38,7 +38,7 @@ baseline_patch = mpatches.Patch(edgecolor = "black", facecolor = my_white, label
 ecfp_patch = mpatches.Patch(edgecolor = "black", facecolor = my_black, label='ECFP4')
 #%% Load Data
 print("Load Data \n")
-fps = pd.read_csv("../data/coconut_decoy.csv")
+fps = pd.read_csv("../data/precomputed_fingerprints.csv")
 remove_val_mol = pd.read_pickle("../data/to_keep_molecules.pkl")
 fps=fps.loc[remove_val_mol,:]
 fps.reset_index(inplace =True, drop=True)
@@ -145,6 +145,8 @@ to_print.iloc[0,0] = "-"
 to_print.iloc[0,1] = mean_t1[0,2] 
 print(to_print.to_latex())  
 #%% Target Identification
+
+
 print("\nTarget Identification Task")
 auc = []
 ef = []
@@ -428,38 +430,22 @@ for k in range(4):
 print(to_print.to_latex())
 
 #%% GCN
-out_gcn= pd.DataFrame(np.zeros([18,14]))
-out_gcn.index= ["AUC", "EF1", "EF2.5", "ActiveNP", "NP", "NP AUC", "EF1 NP", "EP2.5 NP", "Mean NPL"]*2
-cv_out_gcn = np.zeros([5,18,14])
-for cv in range(5):
-    for i in range(14):
-        results = pd.read_csv("../results/np+target/gcn"+"/gcn_"+str(i)+"_cv"+str(cv)+".csv")    
-        cv_out_gcn[cv,:,i]=np.mean(results,axis=1)
-out_gcn.iloc[:,:]=np.mean(cv_out_gcn, axis=0)
+# =============================================================================
+# out_gcn= pd.DataFrame(np.zeros([18,14]))
+# out_gcn.index= ["AUC", "EF1", "EF2.5", "ActiveNP", "NP", "NP AUC", "EF1 NP", "EP2.5 NP", "Mean NPL"]*2
+# cv_out_gcn = np.zeros([5,18,14])
+# for cv in range(5):
+#     for i in range(14):
+#         results = pd.read_csv("../results/np+target/gcn"+"/gcn_"+str(i)+"_cv"+str(cv)+".csv")    
+#         cv_out_gcn[cv,:,i]=np.mean(results,axis=1)
+# out_gcn.iloc[:,:]=np.mean(cv_out_gcn, axis=0)
+# 
+# 
+# 
+# np.std(out_gcn, axis=1)
+# np.mean(np.mean(cv_out_gcn[:,6,:],axis=0).transpose())
+# =============================================================================
 
-
-
-np.std(out_gcn, axis=1)
-np.mean(np.mean(cv_out_gcn[:,6,:],axis=0).transpose())
-
-#%%
-results=np.hstack([out_aux.transpose().values,out_ae.transpose().iloc[:,:9].values, out_baseline.transpose().iloc[:,:9].values])
-
-out=pd.DataFrame({
-"Num. NP Found":np.round(np.mean(pd.DataFrame(results[:,[4,22,31,13]]).rank(axis=1, ascending =False), axis=0),3),
-"AUC":np.round(np.mean(pd.DataFrame(results[:,[5,23,32,14]]).rank(axis=1, ascending =False), axis=0),3),
-"EF1":np.round(np.mean(pd.DataFrame(results[:,[6,24,33,15]]).rank(axis=1, ascending =False), axis=0),3),
-"EF2.5":np.round(np.mean(pd.DataFrame(results[:,[7,25,34,16]]).rank(axis=1, ascending =False), axis=0),3)}).transpose()
-
-out_t = PrettyTable()
-out_t.field_names = ["Metric","NP_AUX", "NP_AE", "Baseline","ECFP4"]
-out_t.add_row(["Num. NP Found"]+[str(x) for x in out.iloc[0,:]])
-out_t.add_row(["AUC"]+[str(x) for x in out.iloc[1,:]])
-out_t.add_row(["EF1"]+[str(x)for x in out.iloc[2,:]])
-out_t.add_row(["EF2.5"]+[str(x) for x in out.iloc[3,:]])
-print(out_t)
-
-ttest_rel(a = mean_auc[:,0],b= mean_auc[:,1] )
 
 #%%
 n_groups=14
@@ -500,9 +486,9 @@ plt.savefig("../results/plots/np+target_identification.pdf",format="pdf", dpi =3
 
 
 
-#%%
+#%% Create Plot Comparing plot pre vs post training
 
-i= 1
+i= 1 # second cv
 model_baseline.load_state_dict(torch.load(model_path+"baseline_cv"+str(i)+".pt"))
 model_baseline.eval()
 model_baseline.cuda()
@@ -517,7 +503,8 @@ model_ae.eval()
 model_untrained = FP_AE(settings["ae_model"]["layers"],1+settings["ae_model"]["with_npl"],settings["ae_model"]["dropout"])
 model_untrained.cuda()
 model_untrained.eval()
-i=0
+
+i=0 # first target
 aux_data = pd.read_csv("../data/validation_sets/np_target_identification/smiles_target" +str(i)+".csv") 
 to_drop = aux_data[(aux_data.npl>1) & ( aux_data.np==1)].index.tolist()
 aux_data = aux_data.drop(to_drop,axis=0).reset_index(drop=True)
@@ -634,7 +621,7 @@ plt.savefig("../results/plots/similarity_pseudonp.pdf",format="pdf", dpi =300, b
 #%%
 print("Our Vs Ertls score on the ROR-Gamma Subset")
 
-i=0
+i=0 #first cv model
 aux_data = pd.read_csv("../data/validation_sets/np_target_identification/smiles_target" +str(i)+".csv") 
 fps_data = pd.read_csv("../data/validation_sets/np_target_identification/fps_target" +str(i)+".csv") 
 model_desc =  MLP(settings["aux_model"]["layers"],1 ,settings["aux_model"]["dropout"])
@@ -655,23 +642,25 @@ plt.ylabel("NN Score")
 plt.legend(["Synthetic", "NP"])
 plt.savefig("../results/plots/ror_gamma_np_ertelvsours.svg",format="svg", bbox_inches='tight')
 
-#%%
-left_top_syn = (aux_data[(aux_data.npl<-1.5) & (nnfp_model_desc>9)]).iloc[0,0]
-left_top_np = (aux_data[(aux_data.npl<-0.5) & (nnfp_model_desc>9) & (aux_data.np==1)]).iloc[0,0]
-bottom_right_np = (aux_data[(aux_data.npl>0) & (nnfp_model_desc<-5) & (aux_data.np==1)]).iloc[0,0]
-middle_left_np = (aux_data[(aux_data.npl<-0.8) & (nnfp_model_desc<-0) & (aux_data.np==1)]).iloc[1,0]
-bottom_left_syn = (aux_data[(aux_data.npl<-2.05) & (nnfp_model_desc<-11) & (aux_data.np==0)]).iloc[2,0]
-bottom_right_syn = (aux_data[(aux_data.npl>0.2) & (nnfp_model_desc<-11) & (aux_data.np==0)]).iloc[0,0]
-top_right_np = (aux_data[(aux_data.npl>1.8) & (nnfp_model_desc>11.5) & (aux_data.np==1)]).iloc[0,0]
-top_right_syn = (aux_data[(aux_data.npl>1.7) & (nnfp_model_desc>11.5) & (aux_data.np==0)]).iloc[2,0]
-highest_np = (aux_data[(nnfp_model_desc>15) & (aux_data.np==1)]).iloc[0,0]
-mols_to_draw = [left_top_syn, left_top_np, bottom_right_np, middle_left_np,bottom_left_syn, bottom_right_syn, top_right_np, top_right_syn]
-mols_to_draw = [Chem.MolFromSmiles(x) for x in mols_to_draw]
-
-MolsToGridImage(mols_to_draw, molsPerRow=4, useSVG=True)
-Chem.MolFromSmiles(top_right_np)
+# =============================================================================
+# left_top_syn = (aux_data[(aux_data.npl<-1.5) & (nnfp_model_desc>9)]).iloc[0,0]
+# left_top_np = (aux_data[(aux_data.npl<-0.5) & (nnfp_model_desc>9) & (aux_data.np==1)]).iloc[0,0]
+# bottom_right_np = (aux_data[(aux_data.npl>0) & (nnfp_model_desc<-5) & (aux_data.np==1)]).iloc[0,0]
+# middle_left_np = (aux_data[(aux_data.npl<-0.8) & (nnfp_model_desc<-0) & (aux_data.np==1)]).iloc[1,0]
+# bottom_left_syn = (aux_data[(aux_data.npl<-2.05) & (nnfp_model_desc<-11) & (aux_data.np==0)]).iloc[2,0]
+# bottom_right_syn = (aux_data[(aux_data.npl>0.2) & (nnfp_model_desc<-11) & (aux_data.np==0)]).iloc[0,0]
+# top_right_np = (aux_data[(aux_data.npl>1.8) & (nnfp_model_desc>11.5) & (aux_data.np==1)]).iloc[0,0]
+# top_right_syn = (aux_data[(aux_data.npl>1.7) & (nnfp_model_desc>11.5) & (aux_data.np==0)]).iloc[2,0]
+# highest_np = (aux_data[(nnfp_model_desc>15) & (aux_data.np==1)]).iloc[0,0]
+# mols_to_draw = [left_top_syn, left_top_np, bottom_right_np, middle_left_np,bottom_left_syn, bottom_right_syn, top_right_np, top_right_syn]
+# mols_to_draw = [Chem.MolFromSmiles(x) for x in mols_to_draw]
+# 
+# MolsToGridImage(mols_to_draw, molsPerRow=4, useSVG=True)
+# Chem.MolFromSmiles(top_right_np)
+# =============================================================================
 #%%%
 #Compute Correlation
+
 
 molwt = [ExactMolWt(Chem.MolFromSmiles(x)) for x in aux_data.smiles] 
 numhetero = [CalcNumHeteroatoms(Chem.MolFromSmiles(x))/Chem.MolFromSmiles(x).GetNumAtoms() for x in aux_data.smiles] 
@@ -693,173 +682,12 @@ out_t.add_row(["Molecular Weight"]+[str(np.round(x,3)) for x in correlation_comp
 out_t.add_row(["Ratio Heteroatoms"]+[str(np.round(x,3)) for x in correlation_comparison.iloc[1,:]])
 out_t.add_row(["Ratio SP3 Carbon"]+[str(np.round(x,3)) for x in correlation_comparison.iloc[2,:]])
 
-print(out_t)
-print("Correlation between Properties and Natural Product Scores")
 
+print("Correlation between Properties and Natural Product Scores")
+print(out_t)
 to_save = out_t.get_string()
 to_save= to_save.encode(encoding='UTF-8')
 
-with open('../results/tables/correlations_nplscores.txt', 'wb') as f:
+with open('../results/correlations_nplscores.txt', 'wb') as f:
     f.write(to_save)
 
-#%% 
-
-model_desc =  MLP(settings["aux_model"]["layers"],1 ,settings["aux_model"]["dropout"])
-model_desc.load_state_dict(torch.load("../data/trained_models/npl_nonorm_64/aux_cv0.pt"))
-model_desc.cpu()
-model_desc.eval()
-
-data=pd.read_pickle("../data/zinc_smiles_clean.pkl")
-zinc_onpl = list()
-for i in list(range(0, data.shape[0],100000 )):
-    print(i)
-    zfp = get_fingerprints(data.iloc[i:(i+100000)])
-    zinc_onpl.append(model_desc(torch.tensor(zfp.iloc[:,:2048].values, dtype =torch.float))[1].detach().flatten().numpy())
-
-
-
-sub = fps.iloc[val_chunks[0],:]
-sub = sub[sub.is_np==1] 
-val_onpl = model_desc(torch.tensor(sub.iloc[:,:2048].values, dtype=torch.float))[1].detach().flatten().numpy()
-
-coconut_onpl = pd.read_csv("../data/coconut_onpl.csv")
-coconut_onpl =  coconut_onpl.loc[remove_val_mol,:] #.reset_index(drop=True)
-
-zinc_onpl = pd.read_csv("../data/zinc_onpl.csv")
-#zinc_onpl.our = expit(zinc_onpl.our)
-#coconut_onpl.our = expit(coconut_onpl.our)
-
-
-# =============================================================================
-# zinc_onpl = pd.concat([pd.Series(np.hstack(zinc_onpl)), data.npl],axis=1)
-# zinc_onpl.columns =  ["our", "ertl"]
-# zinc_onpl.to_csv("../data/zinc_onpl.csv")
-# =============================================================================
-#%%
-
-fig, ax =plt.subplots(2,1, figsize=(8,6))
-
-sns.kdeplot(val_onpl,ax=ax[0])
-sns.kdeplot(sub.npl, ax=ax[1])
-sns.kdeplot(zinc_onpl.our, shade = True,ax=ax[0])
-sns.kdeplot(zinc_onpl.ertl, shade =True, ax=ax[1])
-
-ax[0].set_xlabel("NN Score")
-ax[1].set_xlabel("Ertl Score")
-plt.tight_layout()
-plt.legend(["Coconnut","Zinc - In Stock"], ncol =2, loc = [0.27,-0.34], frameon = False)
-plt.savefig("../results/plots/density_ertel_onpl.pdf",format="pdf", dpi =300, bbox_inches='tight')
-
-#%%
-model_desc =  MLP(settings["aux_model"]["layers"],1 ,settings["aux_model"]["dropout"])
-model_desc.load_state_dict(torch.load("../data/trained_models/npl_nonorm_64/aux_cv1.pt"))
-model_desc.cuda()
-model_desc.eval()
-
-
-
-wald = pd.read_csv("../../Data/wald_compounds.smi", sep ="\t")
-wald_fps = get_fingerprints(wald)
-
-nnfp_model_desc     = (model_desc(torch.tensor(wald_fps.values, dtype =torch.float).cuda())[1].cpu().detach().flatten().numpy())
-wald["ours"] = nnfp_model_desc 
-np.corrcoef(wald.npl, nnfp_model_desc)
-
-label_ll = list()
-for i in range(wald.shape[0]):
-     label_ll.append("Ertls Score: "+  str(np.round(wald.iloc[i,1],3)) +"\n \n" + "NN Score: " + str(np.round(wald.iloc[i,2],3)) )  
-
-MolsToGridImage([Chem.MolFromSmiles(x) for x in wald.smiles], legends = label_ll,useSVG=True )
-
-#%%%
-model_desc =  MLP(settings["aux_model"]["layers"],1 ,settings["aux_model"]["dropout"])
-model_desc.load_state_dict(torch.load("../data/trained_models/npl_nonorm_64/aux_cv1.pt"))
-model_desc.cuda()
-model_desc.eval()
-
-
-zinc=pd.read_pickle("../data/zinc_smiles_clean.pkl")
-wald = pd.read_csv("../../Data/wald_compounds.smi", sep ="\t")
-wald_fps = get_fingerprints(wald)
-pseudo_nnfp = (model_desc(torch.tensor(wald_fps.values, dtype =torch.float).cuda())[2].cpu().detach().clone().numpy())
-
-sim_ll = list()
-model_desc.cpu()
-for i in range(0,zinc.shape[0],100000):
-    print(i/100000)
-    zincfp = get_fingerprints(zinc.iloc[i:(i+100000),:])  
-    zincfp = model_desc(torch.tensor(zincfp.values, dtype=torch.float))[2].detach().clone().numpy()    
-    sim_ll.append(cosine_similarity(pseudo_nnfp, zincfp))    
-
-sim_zinc_pseudo_np=np.hstack(sim_ll).transpose()
-sim_zinc_pseudo_np=pd.DataFrame(sim_zinc_pseudo_np)
-sim_zinc_pseudo_np["smiles"] = zinc.smiles
-sim_zinc_pseudo_np["npl"] = zinc.npl
-
-sim_zinc_pseudo_np.to_csv("../results/wald_simsearch_nnfp.csv", index=False)
-sim_zinc_pseudo_np["npl"] = zinc.npl
-#%%
-from rdkit.Chem import Draw
-
-
-zinc_fph5 = FPSim2CudaEngine("../data/zinc_fp.h5")
-coc_fph5 = FPSim2CudaEngine("Data/coconut.h5")
-
-to_draw = list()
-labels  = list()
-for i in range(15):
-    
-    to_draw.append(Chem.MolFromSmiles(wald.smiles.iloc[i]))
-    labels.append("Ertl NPL: "+str(wald.npl.iloc[i]))
-    
-    #ZINC
-    found_zinc_nnfp = sim_zinc_pseudo_np.sort_values(i, ascending =False).iloc[:5,:]
-    found_zinc_ecfp=zinc.iloc[(pd.DataFrame(zinc_fph5.similarity(wald.smiles.iloc[i], 0.1)).mol_id.iloc[:5].values-1),:]
-    similarities_zinc=pd.DataFrame(zinc_fph5.similarity(wald.smiles.iloc[i], 0.1)).coeff.iloc[:5]
-    
-# =============================================================================
-#     #COCONUT
-#     found_coc_nnfp = sim_coc_pseudo_np.sort_values(i, ascending =False).iloc[:5,:]
-#     found_coc_ecfp=coconut_smiles.iloc[(pd.DataFrame(coc_fph5.similarity(wald.smiles.iloc[i], 0.1)).mol_id.iloc[:5].values-1),:]
-#     similarities_coc=pd.DataFrame(coc_fph5.similarity(wald.smiles.iloc[i], 0.1)).coeff.iloc[:5]
-# =============================================================================
-
-    for k in range(5):
-        to_draw.append(Chem.MolFromSmiles(found_zinc_nnfp.smiles.iloc[k]))
-        labels.append("Ertl NPL: "+str(np.round(found_zinc_nnfp.npl.iloc[k],3))+"\nCosine Similarity: "+str(np.round(found_zinc_nnfp.iloc[k,i],4)))
-    to_draw.append(Chem.MolFromSmiles("CC"))
-    labels.append("x")
-    for k in range(5):
-        to_draw.append(Chem.MolFromSmiles(found_zinc_ecfp.smiles.iloc[k]))
-        labels.append("Ertl NPL: "+str(np.round(found_zinc_ecfp.npl.iloc[k],3))+"\nTanimoto Similarity: "+str(np.round(similarities_zinc.iloc[k],4)))
-   
-    
-        
-# =============================================================================
-#     for k in range(5):
-#         to_draw.append(Chem.MolFromSmiles(found_coc_nnfp.smiles.iloc[k]))
-#         labels.append("Ertl NPL: "+str(np.round(found_coc_nnfp.npl.iloc[k],3))+"\nCosine Similarity: "+str(np.round(found_coc_nnfp.iloc[k,i],4)))
-#     to_draw.append(Chem.MolFromSmiles("CC"))
-#     labels.append("x")
-#     for k in range(5):
-#         to_draw.append(Chem.MolFromSmiles(found_coc_ecfp.smiles.iloc[k]))
-#         labels.append("Ertl NPL: "+str(np.round(found_coc_ecfp.npl.iloc[k],3))+"\nTanimoto Similarity: "+str(np.round(similarities_coc.iloc[k],4)))
-# 
-# =============================================================================
-Draw.MolsToGridImage(to_draw, molsPerRow=6, maxMols=400, legends=labels,useSVG=True)
-#%%
-
-zinc_npl = data.npl
-coconut_npl = pd.read_csv("../data/coconut_decoy.csv", usecols=["is_np", "npl"  ])
-remove_val_mol = pd.read_pickle("../data/to_keep_molecules.pkl")
-coconut_npl=coconut_npl.loc[remove_val_mol,:]
-coconut_npl.reset_index(inplace =True, drop=True)
-np.sum(coconut_npl.is_np==1)
-
-sns.kdeplot(zinc_npl, shade=True)
-sns.kdeplot(coconut_npl.npl[coconut_npl.is_np==0],shade=True, clip = (-10,0))
-sns.kdeplot(coconut_npl.npl[coconut_npl.is_np==1],shade=True)
-sns.despine()
-plt.legend(labels=['ZINC - InStock', 'Decoys Included', 'Coconut'],frameon=False)
-plt.xlabel("Natural Product Likeness")
-plt.savefig("../results/plots/density_npl.pdf",format="pdf", dpi =300, bbox_inches='tight')

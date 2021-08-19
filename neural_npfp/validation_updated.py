@@ -92,30 +92,5 @@ def task2_mcc(best_model):
             mcc.append(matthews_corrcoef(target_var[test_index],y_pred))
         mean_mcc_nnfp.append(np.mean(mcc))
     return mean_mcc_og, mean_mcc_nnfp
-# =============================================================================
-# 
-# 
-# total_a = 0
-# total_i = 0
-# total = 0
-# for protein in os.listdir("../data/validation_sets/clean_task2"):
-#     subset_npfp = pd.read_csv("../data/validation_sets/clean_task2/"+ protein)
-#     total_a += subset_npfp.Activity.sum()
-#     total_i += subset_npfp.shape[0]-subset_npfp.Activity.sum()
-#     total += subset_npfp.shape[0]
-# 
-# 
-# total_a = 0
-# total_i = 0
-# total = 0
-# 
-# l = []
-# for i in range(14):
-#     l.append(pd.read_csv("../data/validation_sets/np_target_identification/smiles_target" +str(i)+".csv")) 
-# 
-#     
-# 
-# l = pd.concat(l).drop_duplicates("smiles")    
-# np.sum((l.active==0) & (l.np==1))
-# =============================================================================
+
 

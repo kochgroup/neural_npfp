@@ -8,6 +8,9 @@ from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit import DataStructs
 
 def evaluate_fp(nnfp, ecfp, target_test, querry_number):
+    """
+    Performs a single similarity search for a query
+    """
     distance_df = pd.DataFrame(
         np.zeros([nnfp[list(nnfp)[0]].shape[0] - 1, len(nnfp) + 2]),
         index=nnfp[list(nnfp)[0]].drop(nnfp[list(nnfp)[0]].index[querry_number]).index,
@@ -28,6 +31,8 @@ def evaluate_fp(nnfp, ecfp, target_test, querry_number):
     return distance_df
 
 def compare_fp(data, test_data):
+    
+    "Evaluates the fingerprints for a given set of queries"
     input_querries=np.where(test_data[0]==1)[0].tolist()
     out_df = pd.DataFrame(np.zeros([len(input_querries), 4*(len(data)+1)]))
     names= []

@@ -228,20 +228,7 @@ def calculate_sensitivity_specificity(y_test, y_pred_test):
     
     return sensitivity, specificity, accuracy
 
-# =============================================================================
-#     
-# ah=pd.read_csv("Data/decoys.csv")
-# bh = pd.read_csv("Data/coconut_smiles_clean.csv")
-# 
-# a = comp_descriptors(ah.smiles)
-# b = comp_descriptors(bh.smiles)
-# 
-# combind=pd.concat([b,a], axis=0)
-# 
-# combind.to_csv("Data/descriptors_topo.csv")
-# 
-# 
-# =============================================================================
+
 def norm_adj(x):
     """Normalizes Adjacency Matrix
     
