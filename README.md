@@ -28,11 +28,26 @@ The code can be used to reproduce our results, retrain the models and compute fi
     conda activate neural_npfp_env
     ```   
 # Data    
+
 The `data` folder contains multiple datasets in case you are interested in just the dataset consisting of the NP and synthetic compounds from ZINC please use the `data/coconut_synthetic.csv` 
 The validation data collected by us can be found in `data/validation_sets/np_target_identification/`
 * `fps_targets` contain the precomputed ECFP for each target
 * `smiles_targets` contains the SMILES.
 
+The `clean_task1.csv` and `clean_task2.csv` were not created by us, we did not include the SMILES for those compounds. If you are interested in the actual compounds we refer to the original publication.
+
+Seo, M.; Shin, H.K.; Myung, Y. et al. Development of Natural Compound Molecular Fingerprint (NC-MFP) with the Dictionary of Natural Products (DNP) for natural product-based drug development. _Journal of Cheminformatics_. **2020**, 12(6) https://doi.org/10.1186/s13321-020-0410-3
+
+
+### The data was collect with the help of:
+
+* Sterling, T.; Irwin, J. J. ZINC 15–ligand Discovery for Everyone. _Journal of Chemical Information and Modeling._ **2015**, 55, 2324–2337.
+
+* Sorokina, M.; Merseburger, P.; Rajan, K.; Yirik, M. A.; Stein-beck, C. COCONUT online: Collection of Open Natural Products Database. _Journal of Cheminformatics_ **2021**, 13, 1–13.
+
+* Mendez,  D.  et  al.  ChEMBL:  Towards  Direct  Deposition  of Bioassay Data. _Nucleic Acids Research_. **2018**, 47, D930–D940.
+
+* Zeng,  X.;  Zhang,  P.;  He,  W.;  Qin,  C.;  Chen,  S.;  Tao,  L.;Wang, Y.;  Tan, Y.;  Gao, D.;  Wang, B.;  Chen, Z.;  Chen, W.;Jiang, Y. Y.; Chen, Y. Z. NPASS: Natural Product Activity and Species Source Database for Natural Product Research, Discovery and Tool Development. _Nucleic Acids Research_. **2018**, 46, D1217–D1222.
 
 # Experiments
 
