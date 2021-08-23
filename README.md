@@ -27,6 +27,13 @@ The code can be used to reproduce our results, retrain the models and compute fi
     conda env create -f environment.yml
     conda activate neural_npfp_env
     ```   
+# Data    
+The `data` folder contains multiple datasets in case you are interested in just the dataset consisting of the NP and synthetic compounds from ZINC please use the `data/coconut_synthetic.csv` 
+The validation data collected by us can be found in `data/validation_sets/np_target_identification/`
+* `fps_targets` contain the precomputed ECFP for each target
+* `smiles_targets` contains the SMILES.
+
+
 # Experiments
 
 To reproduce the results, please run:
@@ -47,8 +54,11 @@ After training the `results` script will perfrom the similarity search and repro
 python results.py
 ```
 In `results/plots` the plots and some addtionall files will be saved.
-In case you want to evaluate models that w
-
+In case you want to evaluate models that you trained with `experiment.py` but a different `settings.yml`
+Run:
+```
+python results --input *path to the folder containing the models*
+```
     
 # Generate Fingerprints
 You can use a csv file containing a column with SMILES strings as input to our model.
@@ -82,12 +92,12 @@ With `python simsearch.py *path of fingerprintfile* -q *index of the query*` the
 Given you generated fingerprints for the `testdata.csv`. The following code will perform a similarity search for the query with index 0 
 
 ```
-python simsearch.py ../data/nnfp_output.csv -q 0
+python simsearch.py ../data/aux_npfp_*date*.csv -q 0
 ```
 You can also perform a similarity search for multiple queries by adding addtional indices.
 
 ```
-python simsearch.py ../data/nnfp_output.csv -q 0 15 8 1 84
+python simsearch.py ../data/aux_npfp.csv -q 0 15 8 1 84
 ```
 A new folder will be generated containing the results of the similairty search
 Like in the original paper, the cosine similarity is used for the search.
