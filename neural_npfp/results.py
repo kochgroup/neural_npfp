@@ -279,90 +279,92 @@ ttest_rel(mean_auc[:,3], mean_auc[:,0])
 
 
  #%% NP and Target Identification
-import warnings
-from FPSim2 import FPSim2CudaEngine
-
-warnings.filterwarnings("ignore")
-
-print("NP and Target Identification")
-print("This will take some time...")
-
-
-if not os.path.exists("../results/np+target/"+model_path.split("/")[-2]):
-    os.makedirs("../results/np+target/"+model_path.split("/")[-2])
-
-
-fp_nobinary = list()
-for i in range(14):
-    aux_data = pd.read_csv("../data/validation_sets/np_target_identification/smiles_target" +str(i)+".csv") 
-    to_drop = aux_data[(aux_data.npl>1) & ( aux_data.np==1)].index.tolist()
-    aux_data = aux_data.drop(to_drop,axis=0).reset_index(drop=True)
-            
-    fp_nobinary.append([AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(smile),2,nBits=2048) for smile in aux_data.smiles])
-
-for cv in range(5):    
-    model_baseline.load_state_dict(torch.load(model_path+"baseline_cv"+str(cv)+".pt"))
-    model_aux.load_state_dict(torch.load(model_path+"aux_cv"+str(cv)+".pt"))
-    model_ae.load_state_dict(torch.load(model_path+"ae_cv"+str(cv)+".pt"))
-
-    model_ae.cuda()
-    model_ae.eval()
-    model_aux.cuda()
-    model_aux.eval()
-    model_baseline.cuda()
-    model_baseline.eval()
-    
-    
-    model_ll = [model_ae, model_aux, model_baseline]
-    label_ll = ["ae", "aux", "baseline"]
-    
-    
-
-    for k in range(3):    
-        for i in range(14):
-            aux_data = pd.read_csv("../data/validation_sets/np_target_identification/smiles_target" +str(i)+".csv") 
-            to_drop = aux_data[(aux_data.npl>1) & ( aux_data.np==1)].index.tolist()
-            aux_data = aux_data.drop(to_drop,axis=0).reset_index(drop=True)
-            fps_data = pd.read_csv("../data/validation_sets/np_target_identification/fps_target" +str(i)+".csv") 
-            fps_data = fps_data.drop(to_drop,axis=0).reset_index(drop=True)
-             
-            nnfp_model = model_ll[k](torch.tensor(fps_data.values, dtype =torch.float).cuda())[2]
-            nnfp ={"nnfp":pd.DataFrame(nnfp_model)}
-            npass_active = np.where((aux_data.active==1) & (aux_data.npass==1))[0]
-            results = pd.DataFrame(np.zeros([18,len(npass_active)]))
-            
-            true_pos_rate = list() 
-            for x in range(npass_active.shape[0]):
-                out=evaluate_fp(nnfp,fp_nobinary[i], aux_data.active,x)
-                out=pd.concat([out, aux_data.loc[out.index].drop("smiles",axis=1)],axis=1)
-            
-                ordered_nnfp=out.sort_values("nnfp", ascending =False)
-                true_pos_rate.append(np.sum((ordered_nnfp.target==1)& (ordered_nnfp.np==1).iloc[:ordered_nnfp.shape[0]//100])/  np.sum((ordered_nnfp.np==1).iloc[:ordered_nnfp.shape[0]//100]))
-                target_list=[[x] for x in ordered_nnfp.target]
-                results.iloc[0,x]=CalcAUC(target_list,0)
-                results.iloc[1:3,x]=CalcEnrichment(target_list,0,[0.01, 0.025])
-                results.iloc[3,x]=np.sum(np.sum(ordered_nnfp.iloc[:ordered_nnfp.shape[0]//100,[5,6]],axis=1)==2)
-                results.iloc[4,x]=np.sum(ordered_nnfp.iloc[:ordered_nnfp.shape[0]//100,[6]]).values
-                target_list=[[x] for x in ((ordered_nnfp.target==1) & (ordered_nnfp.np==1))]
-                results.iloc[5,x]=CalcAUC(target_list,0)
-                results.iloc[6:8,x]=CalcEnrichment(target_list,0,[0.01, 0.025])
-                results.iloc[8,x] = np.mean(ordered_nnfp.npl.iloc[:ordered_nnfp.shape[0]//100])
-                
-                ordered_ecfp=out.sort_values("ECFP", ascending =False)
-                target_list=[[x] for x in ordered_ecfp.target]
-                results.iloc[9,x]=CalcAUC(target_list,0)
-                results.iloc[10:12,x]=CalcEnrichment(target_list,0,[0.01, 0.025]) 
-                results.iloc[12,x]=np.sum(np.sum(ordered_ecfp.iloc[:ordered_ecfp.shape[0]//100,[5,6]],axis=1)==2)
-                results.iloc[13,x]=np.sum(ordered_ecfp.iloc[:ordered_ecfp.shape[0]//100,[6]]).values
-                
-                target_list=[[x] for x in ((ordered_ecfp.target==1) & (ordered_ecfp.np==1))]
-                results.iloc[14,x]=CalcAUC(target_list,0)
-                results.iloc[15:17,x]=CalcEnrichment(target_list,0,[0.01, 0.025])
-                results.iloc[17,x] = np.mean(ordered_ecfp.npl.iloc[:ordered_ecfp.shape[0]//100])
-                
-            results.to_csv("../results/np+target/"+model_path.split("/")[-2]+"/"+str(label_ll[k])+"_"+str(i)+"_cv"+str(cv)+".csv",index=False)
-    
-    warnings.filterwarnings("default")
+# =============================================================================
+# import warnings
+# from FPSim2 import FPSim2CudaEngine
+# 
+# warnings.filterwarnings("ignore")
+# 
+# print("NP and Target Identification")
+# print("This will take some time...")
+# 
+# 
+# if not os.path.exists("../results/np+target/"+model_path.split("/")[-2]):
+#     os.makedirs("../results/np+target/"+model_path.split("/")[-2])
+# 
+# 
+# fp_nobinary = list()
+# for i in range(14):
+#     aux_data = pd.read_csv("../data/validation_sets/np_target_identification/smiles_target" +str(i)+".csv") 
+#     to_drop = aux_data[(aux_data.npl>1) & ( aux_data.np==1)].index.tolist()
+#     aux_data = aux_data.drop(to_drop,axis=0).reset_index(drop=True)
+#             
+#     fp_nobinary.append([AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(smile),2,nBits=2048) for smile in aux_data.smiles])
+# 
+# for cv in range(5):    
+#     model_baseline.load_state_dict(torch.load(model_path+"baseline_cv"+str(cv)+".pt"))
+#     model_aux.load_state_dict(torch.load(model_path+"aux_cv"+str(cv)+".pt"))
+#     model_ae.load_state_dict(torch.load(model_path+"ae_cv"+str(cv)+".pt"))
+# 
+#     model_ae.cuda()
+#     model_ae.eval()
+#     model_aux.cuda()
+#     model_aux.eval()
+#     model_baseline.cuda()
+#     model_baseline.eval()
+#     
+#     
+#     model_ll = [model_ae, model_aux, model_baseline]
+#     label_ll = ["ae", "aux", "baseline"]
+#     
+#     
+# 
+#     for k in range(3):    
+#         for i in range(14):
+#             aux_data = pd.read_csv("../data/validation_sets/np_target_identification/smiles_target" +str(i)+".csv") 
+#             to_drop = aux_data[(aux_data.npl>1) & ( aux_data.np==1)].index.tolist()
+#             aux_data = aux_data.drop(to_drop,axis=0).reset_index(drop=True)
+#             fps_data = pd.read_csv("../data/validation_sets/np_target_identification/fps_target" +str(i)+".csv") 
+#             fps_data = fps_data.drop(to_drop,axis=0).reset_index(drop=True)
+#              
+#             nnfp_model = model_ll[k](torch.tensor(fps_data.values, dtype =torch.float).cuda())[2]
+#             nnfp ={"nnfp":pd.DataFrame(nnfp_model)}
+#             npass_active = np.where((aux_data.active==1) & (aux_data.npass==1))[0]
+#             results = pd.DataFrame(np.zeros([18,len(npass_active)]))
+#             
+#             true_pos_rate = list() 
+#             for x in range(npass_active.shape[0]):
+#                 out=evaluate_fp(nnfp,fp_nobinary[i], aux_data.active,x)
+#                 out=pd.concat([out, aux_data.loc[out.index].drop("smiles",axis=1)],axis=1)
+#             
+#                 ordered_nnfp=out.sort_values("nnfp", ascending =False)
+#                 true_pos_rate.append(np.sum((ordered_nnfp.target==1)& (ordered_nnfp.np==1).iloc[:ordered_nnfp.shape[0]//100])/  np.sum((ordered_nnfp.np==1).iloc[:ordered_nnfp.shape[0]//100]))
+#                 target_list=[[x] for x in ordered_nnfp.target]
+#                 results.iloc[0,x]=CalcAUC(target_list,0)
+#                 results.iloc[1:3,x]=CalcEnrichment(target_list,0,[0.01, 0.025])
+#                 results.iloc[3,x]=np.sum(np.sum(ordered_nnfp.iloc[:ordered_nnfp.shape[0]//100,[5,6]],axis=1)==2)
+#                 results.iloc[4,x]=np.sum(ordered_nnfp.iloc[:ordered_nnfp.shape[0]//100,[6]]).values
+#                 target_list=[[x] for x in ((ordered_nnfp.target==1) & (ordered_nnfp.np==1))]
+#                 results.iloc[5,x]=CalcAUC(target_list,0)
+#                 results.iloc[6:8,x]=CalcEnrichment(target_list,0,[0.01, 0.025])
+#                 results.iloc[8,x] = np.mean(ordered_nnfp.npl.iloc[:ordered_nnfp.shape[0]//100])
+#                 
+#                 ordered_ecfp=out.sort_values("ECFP", ascending =False)
+#                 target_list=[[x] for x in ordered_ecfp.target]
+#                 results.iloc[9,x]=CalcAUC(target_list,0)
+#                 results.iloc[10:12,x]=CalcEnrichment(target_list,0,[0.01, 0.025]) 
+#                 results.iloc[12,x]=np.sum(np.sum(ordered_ecfp.iloc[:ordered_ecfp.shape[0]//100,[5,6]],axis=1)==2)
+#                 results.iloc[13,x]=np.sum(ordered_ecfp.iloc[:ordered_ecfp.shape[0]//100,[6]]).values
+#                 
+#                 target_list=[[x] for x in ((ordered_ecfp.target==1) & (ordered_ecfp.np==1))]
+#                 results.iloc[14,x]=CalcAUC(target_list,0)
+#                 results.iloc[15:17,x]=CalcEnrichment(target_list,0,[0.01, 0.025])
+#                 results.iloc[17,x] = np.mean(ordered_ecfp.npl.iloc[:ordered_ecfp.shape[0]//100])
+#                 
+#             results.to_csv("../results/np+target/"+model_path.split("/")[-2]+"/"+str(label_ll[k])+"_"+str(i)+"_cv"+str(cv)+".csv",index=False)
+#     
+# warnings.filterwarnings("default")
+# =============================================================================
 #%%
 out_aux= pd.DataFrame(np.zeros([18,14]))
 out_aux.index= ["AUC", "EF1", "EF2.5", "ActiveNP", "NP", "NP AUC", "EF1 NP", "EP2.5 NP", "Mean NPL"]*2
@@ -391,8 +393,6 @@ for cv in range(5):
         results = pd.read_csv("../results/np+target/"+model_path.split("/")[-2]+ "/baseline_"+str(i)+"_cv"+str(cv)+".csv")        
         cv_out_baseline[cv,:,i]=np.mean(results,axis=1)
 out_baseline.iloc[:,:]=np.mean(cv_out_baseline, axis=0)
-
-
 
 
 auc = np.stack([cv_out_aux[:,5,:], cv_out_ae[:,5,:], cv_out_baseline[:,5,:], cv_out_aux[:,14,:]])
@@ -428,24 +428,6 @@ for k in range(4):
     to_print.iloc[k,1] = str(mean_ef_print[k]) + " (" + str(sd_ef_print[k]) +")"
 
 print(to_print.to_latex())
-
-#%% GCN
-# =============================================================================
-# out_gcn= pd.DataFrame(np.zeros([18,14]))
-# out_gcn.index= ["AUC", "EF1", "EF2.5", "ActiveNP", "NP", "NP AUC", "EF1 NP", "EP2.5 NP", "Mean NPL"]*2
-# cv_out_gcn = np.zeros([5,18,14])
-# for cv in range(5):
-#     for i in range(14):
-#         results = pd.read_csv("../results/np+target/gcn"+"/gcn_"+str(i)+"_cv"+str(cv)+".csv")    
-#         cv_out_gcn[cv,:,i]=np.mean(results,axis=1)
-# out_gcn.iloc[:,:]=np.mean(cv_out_gcn, axis=0)
-# 
-# 
-# 
-# np.std(out_gcn, axis=1)
-# np.mean(np.mean(cv_out_gcn[:,6,:],axis=0).transpose())
-# =============================================================================
-
 
 #%%
 n_groups=14
@@ -578,50 +560,14 @@ ax[0][1].set_title("After Training")
 plt.legend(labels=['Synthetic', "Inactive NP", "Active NP"],frameon=False, bbox_to_anchor=(-0.1, -0.48), fancybox=True,ncol=4,loc='lower center', prop={'size': 12})
 plt.savefig("../results/plots/correlation_trainedVSuntrained.pdf",format="pdf", dpi =300, bbox_inches='tight')
 
-#%% waldmann psuedo nps
-print("Ploting Graphs for Pseudo NPs")
-
-wald = pd.read_csv("../data/validation_sets/wald_compounds.smi", sep ="\t")
-wald_fps = get_fingerprints(wald)
-
-nnfp_model_desc = (model_desc(torch.tensor(wald_fps.values, dtype =torch.float).cuda())[1].cpu().detach().flatten().numpy())
-wald["ours"] = nnfp_model_desc 
-np.corrcoef(wald.npl, nnfp_model_desc)
-
-label_ll = list()
-for i in range(wald.shape[0]):
-     label_ll.append("Ertls Score: "+  str(np.round(wald.iloc[i,1],3)) +"\n \n" + "Our Score: " + str(np.round(wald.iloc[i,2],3)) )  
-
-img=Draw.MolsToGridImage([Chem.MolFromSmiles(x) for x in wald.smiles], legends = label_ll)
 
 
-with open("../results/plots/pseudo_np_npl.png",'wb+') as outf:
-    outf.write(img.data)
 
-#%% Similarity between PseudoNPs
-
-
-nnfp_model_desc = (model_desc(torch.tensor(wald_fps.values, dtype =torch.float).cuda())[2].cpu().detach().numpy())
-nn_sim_ll = list()
-for i in range(nnfp_model_desc.shape[0]):
-    for k in range(nnfp_model_desc.shape[0]):
-        if (k!=i) & (i<k):
-            nn_sim_ll.append(cosine_similarity(nnfp_model_desc[i].reshape(1,128 ),nnfp_model_desc[k].reshape(1,128 ))[0,0])
-nn_sim_ll = (np.array(nn_sim_ll)+1)/2
-
-ax = plt.subplot(111)
-ax.hist(nn_sim_ll, bins=40, edgecolor = "#434343", color = sns.color_palette()[0])
-ax.hist(GetTanimotoSimMat([GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(x),2,2048)for x in wald.smiles]), bins=40, edgecolor="#434343", color=sns.color_palette()[1])
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-plt.legend(["Np_AUX", "ECFP"], frameon =False,loc=[0.3,-0.3],ncol=2)
-plt.xlabel("Similarity\n(Min-Max Scaled)")
-plt.savefig("../results/plots/similarity_pseudonp.pdf",format="pdf", dpi =300, bbox_inches='tight')
 
 #%%
 print("Our Vs Ertls score on the ROR-Gamma Subset")
 
-i=0 #first cv model
+i=0 #first target
 aux_data = pd.read_csv("../data/validation_sets/np_target_identification/smiles_target" +str(i)+".csv") 
 fps_data = pd.read_csv("../data/validation_sets/np_target_identification/fps_target" +str(i)+".csv") 
 model_desc =  MLP(settings["aux_model"]["layers"],1 ,settings["aux_model"]["dropout"])
@@ -642,23 +588,6 @@ plt.ylabel("NN Score")
 plt.legend(["Synthetic", "NP"])
 plt.savefig("../results/plots/ror_gamma_np_ertelvsours.svg",format="svg", bbox_inches='tight')
 
-# =============================================================================
-# left_top_syn = (aux_data[(aux_data.npl<-1.5) & (nnfp_model_desc>9)]).iloc[0,0]
-# left_top_np = (aux_data[(aux_data.npl<-0.5) & (nnfp_model_desc>9) & (aux_data.np==1)]).iloc[0,0]
-# bottom_right_np = (aux_data[(aux_data.npl>0) & (nnfp_model_desc<-5) & (aux_data.np==1)]).iloc[0,0]
-# middle_left_np = (aux_data[(aux_data.npl<-0.8) & (nnfp_model_desc<-0) & (aux_data.np==1)]).iloc[1,0]
-# bottom_left_syn = (aux_data[(aux_data.npl<-2.05) & (nnfp_model_desc<-11) & (aux_data.np==0)]).iloc[2,0]
-# bottom_right_syn = (aux_data[(aux_data.npl>0.2) & (nnfp_model_desc<-11) & (aux_data.np==0)]).iloc[0,0]
-# top_right_np = (aux_data[(aux_data.npl>1.8) & (nnfp_model_desc>11.5) & (aux_data.np==1)]).iloc[0,0]
-# top_right_syn = (aux_data[(aux_data.npl>1.7) & (nnfp_model_desc>11.5) & (aux_data.np==0)]).iloc[2,0]
-# highest_np = (aux_data[(nnfp_model_desc>15) & (aux_data.np==1)]).iloc[0,0]
-# mols_to_draw = [left_top_syn, left_top_np, bottom_right_np, middle_left_np,bottom_left_syn, bottom_right_syn, top_right_np, top_right_syn]
-# mols_to_draw = [Chem.MolFromSmiles(x) for x in mols_to_draw]
-# 
-# MolsToGridImage(mols_to_draw, molsPerRow=4, useSVG=True)
-# Chem.MolFromSmiles(top_right_np)
-# =============================================================================
-#%%%
 #Compute Correlation
 
 
@@ -688,6 +617,5 @@ print(out_t)
 to_save = out_t.get_string()
 to_save= to_save.encode(encoding='UTF-8')
 
-with open('../results/correlations_nplscores.txt', 'wb') as f:
-    f.write(to_save)
+
 

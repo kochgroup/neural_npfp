@@ -11,7 +11,38 @@ from tqdm import tqdm
 from rdkit.Chem.rdmolops import GetAdjacencyMatrix
 from scipy.linalg import block_diag
 from scipy import stats
+from rdkit import RDLogger
 
+
+
+def get_fingerprints_user(data, label ,bitSize_circular=2048, morgan_radius=2):
+    
+    index_not_convertable = []
+    
+    """ 
+    Computes the Fingerprints from Molecules
+    """
+    # if label is string get colum number
+
+    #Disable printing Warnings
+    RDLogger.DisableLog('rdApp.*')  
+    
+    feature_matrix= pd.DataFrame(np.zeros((data.shape[0],bitSize_circular)), dtype=int) 
+    
+    
+    for i in tqdm(range(data.shape[0])):
+       try:
+           feature_matrix.iloc[i,:] = np.array(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(data.iloc[i, label]),morgan_radius,nBits=bitSize_circular)) 
+       except:
+           feature_matrix.iloc[i,:] = 0
+           index_not_convertable.append(i)
+    RDLogger.EnableLog('rdApp.*')  
+    
+    if len(index_not_convertable)> 0:
+        print("\n",len(index_not_convertable), " Molecules could not be read.")  
+    
+    
+    return feature_matrix, index_not_convertable
 
 def get_fingerprints(data, bitSize_circular=2048, labels_default=None , labels_morgan=None, morgan_radius=2):
     
