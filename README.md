@@ -27,6 +27,10 @@ The code can be used to reproduce our results, retrain the models and compute fi
     conda env create -f environment.yml
     conda activate neural_npfp_env
     ```   
+    Please install Pyorch with you appropriate choice of cuda.
+    ```
+    conda install pytorch==1.7.0 cudatoolkit=*Your Version* -c pytorch
+    ```
 # Data    
 
 The `data` folder contains multiple datasets in case you are interested in just the dataset consisting of the NP and synthetic compounds from ZINC please use the `data/coconut_synthetic.csv` 
