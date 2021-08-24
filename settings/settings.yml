@@ -1,7 +1,7 @@
 path_to_save: "../data/trained_models/npl_nonorm_64/"
 data:
   batch_size: 128
-  fp_file: "../data/coconut_decoy_nocut.csv"
+  fp_file: "../data/precomputed_fingerprints.csv"
   remove_val_file: "../data/to_keep_molecules.pkl" 
   descriptor_file: "../data/descriptors.csv"
 
