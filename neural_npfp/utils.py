@@ -5,7 +5,7 @@ from tqdm import tqdm
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from torch.utils.data import DataLoader, Dataset
-from mordred import Calculator, descriptors, TopoPSA,Weight, CarbonTypes,SLogP, MoeType
+#from mordred import Calculator, descriptors, TopoPSA,Weight, CarbonTypes,SLogP, MoeType
 from rdkit import Chem
 from tqdm import tqdm
 from rdkit.Chem.rdmolops import GetAdjacencyMatrix
@@ -175,65 +175,67 @@ class FPDataset(Dataset):
  
     
  
-def comp_descriptors(smiles):
-    mols = [Chem.MolFromSmiles(smile) for smile in smiles ]
-    calc = Calculator()
-    calc.register(MoeType.EState_VSA(1))
-    calc.register(MoeType.EState_VSA(2))
-    calc.register(MoeType.EState_VSA(3))
-    calc.register(MoeType.EState_VSA(4))
-    calc.register(MoeType.EState_VSA(5))
-    calc.register(MoeType.EState_VSA(6))
-    calc.register(MoeType.EState_VSA(7))
-    calc.register(MoeType.EState_VSA(8))
-    calc.register(MoeType.EState_VSA(9))
-    calc.register(MoeType.EState_VSA(10))
-    calc.register(MoeType.EState_VSA(11))
-    
-    calc.register(MoeType.PEOE_VSA(1))
-    calc.register(MoeType.PEOE_VSA(2))
-    calc.register(MoeType.PEOE_VSA(3))
-    calc.register(MoeType.PEOE_VSA(4))
-    calc.register(MoeType.PEOE_VSA(5))
-    calc.register(MoeType.PEOE_VSA(6))
-    calc.register(MoeType.PEOE_VSA(7))
-    calc.register(MoeType.PEOE_VSA(8))
-    calc.register(MoeType.PEOE_VSA(9))
-    calc.register(MoeType.PEOE_VSA(10))
-    calc.register(MoeType.PEOE_VSA(11))
-    calc.register(MoeType.PEOE_VSA(12))
-    calc.register(MoeType.PEOE_VSA(13))
-    calc.register(MoeType.PEOE_VSA(14))
-    
-    calc.register(MoeType.SMR_VSA(1))
-    calc.register(MoeType.SMR_VSA(2))
-    calc.register(MoeType.SMR_VSA(3))
-    calc.register(MoeType.SMR_VSA(4))
-    calc.register(MoeType.SMR_VSA(5))
-    calc.register(MoeType.SMR_VSA(6))
-    calc.register(MoeType.SMR_VSA(7))
-    calc.register(MoeType.SMR_VSA(8))
-    calc.register(MoeType.SMR_VSA(9))
-    calc.register(MoeType.SMR_VSA(10))
-    
-    calc.register(MoeType.SlogP_VSA(1))
-    calc.register(MoeType.SlogP_VSA(2))
-    calc.register(MoeType.SlogP_VSA(3))
-    calc.register(MoeType.SlogP_VSA(4))
-    calc.register(MoeType.SlogP_VSA(5))
-    calc.register(MoeType.SlogP_VSA(6))
-    calc.register(MoeType.SlogP_VSA(7))
-    calc.register(MoeType.SlogP_VSA(8))
-    calc.register(MoeType.SlogP_VSA(9))
-    calc.register(MoeType.SlogP_VSA(10))
-    calc.register(MoeType.SlogP_VSA(11))
-    calc.register(MoeType.SlogP_VSA(12))
-    
-    
-    calc.register(TopoPSA.TopoPSA(no_only=False))
-    
-    return calc.pandas(mols)
-
+# =============================================================================
+# def comp_descriptors(smiles):
+#     mols = [Chem.MolFromSmiles(smile) for smile in smiles ]
+#     calc = Calculator()
+#     calc.register(MoeType.EState_VSA(1))
+#     calc.register(MoeType.EState_VSA(2))
+#     calc.register(MoeType.EState_VSA(3))
+#     calc.register(MoeType.EState_VSA(4))
+#     calc.register(MoeType.EState_VSA(5))
+#     calc.register(MoeType.EState_VSA(6))
+#     calc.register(MoeType.EState_VSA(7))
+#     calc.register(MoeType.EState_VSA(8))
+#     calc.register(MoeType.EState_VSA(9))
+#     calc.register(MoeType.EState_VSA(10))
+#     calc.register(MoeType.EState_VSA(11))
+#     
+#     calc.register(MoeType.PEOE_VSA(1))
+#     calc.register(MoeType.PEOE_VSA(2))
+#     calc.register(MoeType.PEOE_VSA(3))
+#     calc.register(MoeType.PEOE_VSA(4))
+#     calc.register(MoeType.PEOE_VSA(5))
+#     calc.register(MoeType.PEOE_VSA(6))
+#     calc.register(MoeType.PEOE_VSA(7))
+#     calc.register(MoeType.PEOE_VSA(8))
+#     calc.register(MoeType.PEOE_VSA(9))
+#     calc.register(MoeType.PEOE_VSA(10))
+#     calc.register(MoeType.PEOE_VSA(11))
+#     calc.register(MoeType.PEOE_VSA(12))
+#     calc.register(MoeType.PEOE_VSA(13))
+#     calc.register(MoeType.PEOE_VSA(14))
+#     
+#     calc.register(MoeType.SMR_VSA(1))
+#     calc.register(MoeType.SMR_VSA(2))
+#     calc.register(MoeType.SMR_VSA(3))
+#     calc.register(MoeType.SMR_VSA(4))
+#     calc.register(MoeType.SMR_VSA(5))
+#     calc.register(MoeType.SMR_VSA(6))
+#     calc.register(MoeType.SMR_VSA(7))
+#     calc.register(MoeType.SMR_VSA(8))
+#     calc.register(MoeType.SMR_VSA(9))
+#     calc.register(MoeType.SMR_VSA(10))
+#     
+#     calc.register(MoeType.SlogP_VSA(1))
+#     calc.register(MoeType.SlogP_VSA(2))
+#     calc.register(MoeType.SlogP_VSA(3))
+#     calc.register(MoeType.SlogP_VSA(4))
+#     calc.register(MoeType.SlogP_VSA(5))
+#     calc.register(MoeType.SlogP_VSA(6))
+#     calc.register(MoeType.SlogP_VSA(7))
+#     calc.register(MoeType.SlogP_VSA(8))
+#     calc.register(MoeType.SlogP_VSA(9))
+#     calc.register(MoeType.SlogP_VSA(10))
+#     calc.register(MoeType.SlogP_VSA(11))
+#     calc.register(MoeType.SlogP_VSA(12))
+#     
+#     
+#     calc.register(TopoPSA.TopoPSA(no_only=False))
+#     
+#     return calc.pandas(mols)
+# 
+# =============================================================================
 
 
 def calculate_sensitivity_specificity(y_test, y_pred_test):
