@@ -1,10 +1,5 @@
 # Neural Natural Product Fingerprint
 
-![alt text](https://www.weinland24.de/wp-content/uploads/2020/01/comingsoon.jpg)
-
-We are working on the accesibility of the code right now.
-
-
 This is the accompanying Repository for our work on "Natural Product Scores and Fingerprints Extracted from Artificial Neural Networks." https://doi.org/10.1016/j.csbj.2021.07.032
 
 The code can be used to reproduce our results, retrain the models and compute fingerprints for your own `SMILES`-string.
