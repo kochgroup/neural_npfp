@@ -1,4 +1,4 @@
-name: neural_npfp_env_test
+name: neural_npfp_env
 channels:
   - rdkit
   - pytorch
