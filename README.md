@@ -40,7 +40,7 @@ The `clean_task1.csv` and `clean_task2.csv` were not created by us, we did not i
 Seo, M.; Shin, H.K.; Myung, Y. et al. Development of Natural Compound Molecular Fingerprint (NC-MFP) with the Dictionary of Natural Products (DNP) for natural product-based drug development. _Journal of Cheminformatics_. **2020**, 12(6) https://doi.org/10.1186/s13321-020-0410-3
 
 
-### The data was collect with the help of:
+### The data was collected with the help of:
 
 * Sterling, T.; Irwin, J. J. ZINC 15–ligand Discovery for Everyone. _Journal of Chemical Information and Modeling._ **2015**, 55, 2324–2337.
 
