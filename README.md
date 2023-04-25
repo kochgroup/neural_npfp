@@ -7,9 +7,7 @@ The code can be used to reproduce our results, retrain the models and compute fi
 # Installation
 
 1. Download the Repository
-1. Download the data at ...(only requiered for reproduction of experiments) 
-
-   *we are still dealing with the University Hosting Service, in the mean time send an e-mail to janosch.menke [at] wwu.de* We will provide an personalized Download link
+1. Download the data at https://data-management.uni-muenster.de/datastore/download/10.17879/50059658640
    1. extract the data.zip file into the same repository
      ```
     |- data
